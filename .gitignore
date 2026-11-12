@@ -10,3 +10,4 @@ warehouse/dbt_packages/
 airflow/logs/
 .pytest_cache/
 gx/
+warehouse/.user.yml
