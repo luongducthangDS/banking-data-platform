@@ -1,0 +1,43 @@
+// Paste each measure into Power BI (Modeling > New measure). Table names follow the imported mart names.
+
+Latest Month = MAX ( mart_monthly_kpi[month_start] )
+
+Total Deposits (latest) =
+CALCULATE ( SUM ( mart_monthly_kpi[total_deposits] ),
+    mart_monthly_kpi[month_start] = [Latest Month] )
+
+Open Accounts (latest) =
+CALCULATE ( SUM ( mart_monthly_kpi[open_accounts] ),
+    mart_monthly_kpi[month_start] = [Latest Month] )
+
+Active Rate (latest) =
+CALCULATE ( DIVIDE ( SUM ( mart_monthly_kpi[active_accounts] ), SUM ( mart_monthly_kpi[open_accounts] ) ),
+    mart_monthly_kpi[month_start] = [Latest Month] )
+
+Deposits YoY % =
+VAR cur = [Total Deposits (latest)]
+VAR prev = CALCULATE ( SUM ( mart_monthly_kpi[total_deposits] ),
+    mart_monthly_kpi[month_start] = EDATE ( [Latest Month], -12 ) )
+RETURN DIVIDE ( cur - prev, prev )
+
+Customers = COUNTROWS ( mart_customer_360 )
+
+Churn Risk Customers =
+CALCULATE ( [Customers], mart_customer_360[is_churn_risk] = TRUE () )
+
+Churn Risk Rate =
+DIVIDE ( [Churn Risk Customers],
+    CALCULATE ( [Customers], mart_customer_360[is_churn_eligible] = TRUE () ) )
+
+Churn Risk Deposits =
+CALCULATE ( SUM ( mart_customer_360[avg_end_balance_1998] ), mart_customer_360[is_churn_risk] = TRUE () )
+
+Card Penetration = DIVIDE ( CALCULATE ( [Customers], mart_customer_360[has_card] = TRUE () ), [Customers] )
+
+Loans = COUNTROWS ( mart_loan_performance )
+
+Loan Default Rate =
+DIVIDE ( CALCULATE ( [Loans], mart_loan_performance[is_default] = TRUE () ), [Loans] )
+
+Defaulted Amount =
+CALCULATE ( SUM ( mart_loan_performance[amount] ), mart_loan_performance[is_default] = TRUE () )

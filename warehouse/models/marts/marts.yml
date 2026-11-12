@@ -1,0 +1,45 @@
+version: 2
+
+models:
+  - name: mart_account_monthly
+    description: Account x month grid (opening month .. 1998-12) with activity and carried-forward month-end balance.
+    tests:
+      - dbt_utils_free_unique_combination:
+          arguments: {columns: [account_id, month_start]}
+    columns:
+      - name: end_balance
+        tests: [not_null]
+
+  - name: mart_monthly_kpi
+    description: Bank-level KPIs per month (definitions in docs/KPI_DEFINITIONS.md).
+    columns:
+      - name: month_start
+        tests: [unique, not_null]
+      - name: active_rate
+        tests: [not_null]
+
+  - name: mart_customer_360
+    description: One row per account owner with activity, products, RFM segment and churn proxies.
+    columns:
+      - name: account_id
+        tests: [unique, not_null]
+      - name: client_id
+        tests: [unique, not_null]
+      - name: is_churn_risk
+        tests: [not_null]
+      - name: rfm_segment
+        tests:
+          - accepted_values:
+              arguments: {values: ['Champions', 'Loyal', 'At risk', 'Hibernating', 'Potential', 'Needs attention']}
+
+  - name: mart_loan_performance
+    description: One row per loan with borrower profile and pre-grant behaviour (6 months before grant).
+    columns:
+      - name: loan_id
+        tests: [unique, not_null]
+
+  - name: mart_district_kpi
+    description: One row per district.
+    columns:
+      - name: district_id
+        tests: [unique, not_null]

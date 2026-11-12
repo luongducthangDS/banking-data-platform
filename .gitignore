@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+data/raw/
+landing/
+warehouse/target/
+warehouse/logs/
+warehouse/dbt_packages/
+airflow/logs/
+.pytest_cache/
+gx/

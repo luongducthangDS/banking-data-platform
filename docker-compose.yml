@@ -1,0 +1,56 @@
+x-app-env: &app-env
+  PG_DSN: postgresql://bank:${POSTGRES_PASSWORD:-bank}@postgres:5432/bank
+  CORE_API_URL: http://core-api:8001
+  LANDING_DIR: /opt/project/landing
+
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: bank
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-bank}
+      POSTGRES_DB: bank
+      ANALYST_RO_PASSWORD: ${ANALYST_RO_PASSWORD:-analyst_ro}
+    ports: ["5433:5432"]
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./docker/postgres-init.sh:/docker-entrypoint-initdb.d/init.sh:ro
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "bank"]
+      interval: 5s
+      retries: 20
+
+  core-api:
+    build: sources/core_api
+    environment:
+      CORE_API_FAIL_RATE: ${CORE_API_FAIL_RATE:-0.05}
+      CORE_API_DUP_RATE: ${CORE_API_DUP_RATE:-0.01}
+    volumes: ["./data/raw:/data/raw:ro"]
+    ports: ["8001:8001"]
+
+  airflow:
+    build: {context: ., dockerfile: airflow/Dockerfile}
+    depends_on:
+      postgres: {condition: service_healthy}
+    environment:
+      <<: *app-env
+      DBT_HOST: postgres
+      DBT_PORT: "5432"
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-bank}
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://bank:${POSTGRES_PASSWORD:-bank}@postgres:5432/airflow
+      AIRFLOW__CORE__DAGS_FOLDER: /opt/project/airflow/dags
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: "true"
+      AIRFLOW__LOGGING__BASE_LOG_FOLDER: /opt/project/airflow/logs
+      AIRFLOW_ADMIN_PASSWORD: ${AIRFLOW_ADMIN_PASSWORD:-admin}
+    volumes: ["./:/opt/project"]
+    ports: ["8080:8080"]
+    command: >
+      bash -c "airflow db migrate &&
+      (airflow users create --username admin --password $$AIRFLOW_ADMIN_PASSWORD --firstname Admin
+      --lastname User --role Admin --email admin@example.com || true) &&
+      (airflow scheduler &) && exec airflow webserver"
+
+volumes:
+  pgdata:

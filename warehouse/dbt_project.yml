@@ -1,0 +1,26 @@
+name: bank
+version: "1.0"
+profile: bank
+model-paths: [models]
+test-paths: [tests]
+macro-paths: [macros]
+
+vars:
+  as_of_date: "1999-01-01"   # end of observation (exclusive): data covers 1993-01-01 .. 1998-12-31
+
+models:
+  bank:
+    staging:
+      +schema: staging
+      +materialized: view
+    core:
+      +schema: core
+      +materialized: table
+      +grants: {select: [analyst_ro]}
+    marts:
+      +schema: marts
+      +materialized: table
+      +grants: {select: [analyst_ro]}
+
+on-run-end:
+  - "{{ grant_schema_usage(['core', 'marts'], 'analyst_ro') }}"

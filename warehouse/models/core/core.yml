@@ -1,0 +1,74 @@
+version: 2
+
+models:
+  - name: dim_date
+    columns:
+      - name: date_key
+        tests: [unique, not_null]
+
+  - name: dim_district
+    columns:
+      - name: district_id
+        tests: [unique, not_null]
+
+  - name: dim_customer
+    description: One row per client (natural person).
+    columns:
+      - name: client_id
+        tests: [unique, not_null]
+      - name: gender
+        tests: [{accepted_values: {arguments: {values: ['F', 'M']}}}]
+      - name: district_id
+        tests: [{relationships: {arguments: {to: ref('dim_district'), field: district_id}}}]
+
+  - name: dim_account
+    columns:
+      - name: account_id
+        tests: [unique, not_null]
+      - name: owner_client_id
+        tests: [not_null, {relationships: {arguments: {to: ref('dim_customer'), field: client_id}}}]
+      - name: statement_frequency
+        tests: [not_null]
+
+  - name: bridge_account_customer
+    tests:
+      - dbt_utils_free_unique_combination:
+          arguments: {columns: [account_id, client_id]}
+    columns:
+      - name: role
+        tests: [{accepted_values: {arguments: {values: ['owner', 'disponent']}}}]
+
+  - name: fact_transactions
+    description: One row per posted transaction (1993-01-01 .. 1998-12-31). Grain = transaction_id.
+    columns:
+      - name: transaction_id
+        tests: [unique, not_null]
+      - name: account_id
+        tests: [not_null, {relationships: {arguments: {to: ref('dim_account'), field: account_id}}}]
+      - name: date_key
+        tests: [not_null, {relationships: {arguments: {to: ref('dim_date'), field: date_key}}}]
+      - name: direction
+        tests: [not_null, {accepted_values: {arguments: {values: ['credit', 'debit']}}}]
+      - name: amount
+        tests: [not_null]
+
+  - name: fact_loans
+    columns:
+      - name: loan_id
+        tests: [unique, not_null]
+      - name: account_id
+        tests: [{relationships: {arguments: {to: ref('dim_account'), field: account_id}}}]
+      - name: status_code
+        tests: [{accepted_values: {arguments: {values: ['A', 'B', 'C', 'D']}}}]
+
+  - name: fact_cards
+    columns:
+      - name: card_id
+        tests: [unique, not_null]
+      - name: card_type
+        tests: [{accepted_values: {arguments: {values: ['junior', 'classic', 'gold']}}}]
+
+  - name: fact_standing_orders
+    columns:
+      - name: order_id
+        tests: [unique, not_null]

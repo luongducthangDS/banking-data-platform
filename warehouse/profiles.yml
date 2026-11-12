@@ -1,0 +1,12 @@
+bank:
+  target: dev
+  outputs:
+    dev:
+      type: postgres
+      host: "{{ env_var('DBT_HOST', 'localhost') }}"
+      port: "{{ env_var('DBT_PORT', '5433') | int }}"
+      user: bank
+      password: "{{ env_var('POSTGRES_PASSWORD', 'bank') }}"
+      dbname: bank
+      schema: public
+      threads: 4

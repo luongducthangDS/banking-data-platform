@@ -1,0 +1,16 @@
+version: 2
+
+sources:
+  - name: raw
+    description: Source strings as delivered (loaded by pipeline/extract_load.py).
+    tables:
+      - name: transactions
+        description: Core banking API, incremental.
+        loaded_at_field: _loaded_at
+      - name: clients
+      - name: accounts
+      - name: dispositions
+      - name: districts
+      - name: standing_orders
+      - name: loans
+      - name: cards
