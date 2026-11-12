@@ -26,6 +26,6 @@
 - [x] Bộ câu gold + tấn công; eval
 
 ## Tiếp theo (tuỳ chọn)
-- [ ] Assistant: thêm vào catalog cảnh báo "không join mart tháng với dim_date theo month_start" (lỗi q05), rồi đo lại
+- [ ] Assistant: thêm vào catalog 2 cảnh báo (không join mart tháng với dim_date theo month_start; không AVG cột tỷ lệ, tính lại từ số đếm), chạy eval 3 lần để đo độ ổn định
 - [ ] Tạo repo GitHub public + CI (pytest offline: guard, inject, pipeline unit)
 - [ ] DQ: nới dung sai CORE-CONS-02 lên 0,20 cho ngày có ≥ 2 bút toán ngân hàng tự sinh

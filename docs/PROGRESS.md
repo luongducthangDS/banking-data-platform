@@ -16,6 +16,7 @@ Test: `python -m pytest -q` → 39 passed.
 - Recall 100 % của DQ chỉ chứng minh rule cài đúng, vì rule được viết khi đã biết loại lỗi cấy.
 - Churn là proxy (Berka không có đóng tài khoản). mart_customer_360 dùng mốc cố định 1998, nên trong lúc backfill giữa chừng các cột "1998" chưa có nghĩa.
 - Assistant: lỗi fan-out khi join mart tháng với `dim_date` (q05); câu "khách hàng theo vùng" mơ hồ (q20). 12 câu tấn công đều bị model từ chối nên lớp guard chỉ được kiểm bằng unit test (17 ca).
+- Assistant (smoke test trong Docker, ngoài bộ eval): "tỷ lệ vỡ nợ theo vùng" bị tính bằng AVG(default_rate) không trọng số trên mart_district_kpi → west Bohemia 21,3 % thay vì 15,8 %; câu trả lời chỉ liệt kê số. Model không ổn định giữa các lần chạy dù temperature 0.
 - Power BI `.pbix` chưa dựng (user tự làm theo `analytics/powerbi/README.md`).
 - p95 latency 20,7 s là do chờ 429 của Gemini free tier.
 
