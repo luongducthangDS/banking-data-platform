@@ -1,4 +1,4 @@
--- Account x month grid from the opening month to 1998-12, so months without activity exist
+-- Account x month grid from the opening month to the latest loaded month, so months without activity exist
 -- (needed for "active accounts" and month-end balances). Month-end balance = balance after the
 -- last transaction of the month, carried forward through months without transactions.
 {{ config(post_hook=["create index if not exists mart_account_monthly_idx on {{ this }} (account_id, month_start)"]) }}
@@ -8,7 +8,11 @@ with tx as (
            transaction_id, transaction_date, direction, amount, balance_after, is_customer_initiated
     from {{ ref('fact_transactions') }}
 ),
-months as (select distinct month_start from {{ ref('dim_date') }}),
+-- only months already loaded: during a backfill the warehouse must not show empty future months
+months as (
+    select distinct month_start from {{ ref('dim_date') }}
+    where month_start <= (select date_trunc('month', max(transaction_date)) from tx)
+),
 grid as (
     select a.account_id, m.month_start
     from {{ ref('dim_account') }} a

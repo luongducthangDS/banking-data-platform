@@ -105,6 +105,39 @@ def load_files(conn: psycopg.Connection) -> dict[str, int]:
         raise
 
 
+SWITCH_COLS = ["switch_ref", "core_ref", "account_id", "value_date", "amount", "currency", "channel"]
+
+
+def load_switch(conn: psycopg.Connection, month: str) -> int:
+    """Load the payment switch settlement file for `month` (YYYY-MM). Re-loading replaces that file's rows.
+    A missing file raises, so Airflow retries and the run shows the feed as late (timeliness)."""
+    ensure_schema(conn)
+    path = LANDING / "switch" / f"settlement_{month}.csv"
+    run_id, started = uuid.uuid4(), datetime.now(timezone.utc)
+    try:
+        if not path.exists():
+            raise FileNotFoundError(f"switch settlement file not arrived: {path.name}")
+        with open(path, newline="", encoding="utf-8") as f:
+            r = csv.reader(f)
+            assert next(r) == SWITCH_COLS, f"unexpected header in {path.name}"
+            rows = list(r)
+        with conn.transaction():
+            conn.execute(f"CREATE TABLE IF NOT EXISTS raw.switch_settlements ({', '.join(c + ' text' for c in SWITCH_COLS)}, "
+                         "_file text NOT NULL, _batch_id uuid NOT NULL, _loaded_at timestamptz NOT NULL)")
+            conn.execute("CREATE INDEX IF NOT EXISTS switch_settlements_file ON raw.switch_settlements (_file)")
+            conn.execute("DELETE FROM raw.switch_settlements WHERE _file = %s", (path.name,))
+            with conn.cursor().copy(f"COPY raw.switch_settlements ({', '.join(SWITCH_COLS)}, _file, _batch_id, _loaded_at) FROM STDIN") as cp:
+                for row in rows:
+                    cp.write_row([*row, path.name, run_id, started])
+        _log_run(conn, run_id, "load_switch", None, None, len(rows), len(rows), "success", None, started)
+        log.info("switch %s rows=%s", month, len(rows))
+        return len(rows)
+    except Exception as e:
+        conn.rollback()
+        _log_run(conn, run_id, "load_switch", None, None, None, None, "failed", repr(e)[:2000], started)
+        raise
+
+
 def fetch_page(start: date, end: date, page: int, retries: int = 6, session=requests) -> dict:
     """GET one page; retry 5xx/connection errors with exponential backoff, fail fast on 4xx."""
     for attempt in range(retries):

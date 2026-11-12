@@ -1,0 +1,104 @@
+# Gold set: question + reference SQL. A generated answer is correct when, for every gold column,
+# some generated column holds the same multiset of values (numbers rounded to 2 decimals) and the
+# row counts match (column names, order and extra columns do not matter).
+- id: q01
+  question: Tổng tiền gửi cuối tháng 12/1998 là bao nhiêu?
+  sql: select total_deposits from marts.mart_monthly_kpi where year_month = '1998-12'
+- id: q02
+  question: How many accounts were active in December 1998?
+  sql: select active_accounts from marts.mart_monthly_kpi where year_month = '1998-12'
+- id: q03
+  question: Số tài khoản mở mới mỗi năm?
+  sql: select extract(year from month_start) as year, sum(new_accounts) from marts.mart_monthly_kpi group by 1
+- id: q04
+  question: Tổng tiền vào (credit) của năm 1997 là bao nhiêu?
+  sql: select sum(credit_amount) from marts.mart_monthly_kpi where month_start >= '1997-01-01' and month_start < '1998-01-01'
+- id: q05
+  question: So sánh tổng tiền vào giữa quý 3 và quý 4 năm 1998
+  sql: |
+    select extract(quarter from month_start) as q, sum(credit_amount) from marts.mart_monthly_kpi
+    where month_start >= '1998-07-01' and month_start < '1999-01-01' group by 1
+- id: q06
+  question: Tháng nào năm 1998 có tỷ lệ tài khoản hoạt động thấp nhất?
+  sql: select year_month from marts.mart_monthly_kpi where month_start >= '1998-01-01' order by active_rate asc limit 1
+- id: q07
+  question: How many customers are in each RFM segment?
+  sql: select rfm_segment, count(*) from marts.mart_customer_360 group by 1
+- id: q08
+  question: Phân khúc RFM nào có số dư bình quân năm 1998 cao nhất?
+  sql: select rfm_segment from marts.mart_customer_360 group by 1 order by avg(avg_end_balance_1998) desc limit 1
+- id: q09
+  question: Có bao nhiêu khách có nguy cơ rời bỏ?
+  sql: select count(*) from marts.mart_customer_360 where is_churn_risk
+- id: q10
+  question: Tỷ lệ khách có thẻ theo giới tính
+  sql: select gender, avg(has_card::int) from marts.mart_customer_360 group by 1
+- id: q11
+  question: How many cards of each type have been issued?
+  sql: select card_type, count(*) from core.fact_cards group by 1
+- id: q12
+  question: Tỷ lệ vỡ nợ chung của các khoản vay là bao nhiêu?
+  sql: select avg(is_default::int) from core.fact_loans
+- id: q13
+  question: Tỷ lệ vỡ nợ theo vùng, cao nhất trước
+  sql: select region, avg(is_default::int) from marts.mart_loan_performance group by 1 order by 2 desc
+- id: q14
+  question: Tổng giá trị các khoản vay bị vỡ nợ
+  sql: select sum(amount) from core.fact_loans where is_default
+- id: q15
+  question: Số khoản vay và tổng tiền giải ngân theo năm
+  sql: select extract(year from granted_date), count(*), sum(amount) from core.fact_loans group by 1
+- id: q16
+  question: What is the default rate for loans of customers who had penalty interest before the loan was granted?
+  sql: select avg(is_default::int) from marts.mart_loan_performance where n_penalty_interest_before > 0
+- id: q17
+  question: Khoản vay trung bình theo kỳ hạn (số tháng)
+  sql: select duration_months, avg(amount) from core.fact_loans group by 1
+- id: q18
+  question: Top 5 quận có tiền gửi tháng 12/1998 lớn nhất
+  sql: select district_name, deposits_dec_1998 from marts.mart_district_kpi order by deposits_dec_1998 desc limit 5
+- id: q19
+  question: Quận nào có tỷ lệ thất nghiệp năm 1996 cao nhất?
+  sql: select district_name from core.dim_district order by unemployment_rate_96 desc limit 1
+- id: q20
+  question: Số khách hàng theo vùng
+  sql: select region, count(*) from core.dim_customer group by 1
+- id: q21
+  question: Bao nhiêu giao dịch rút tiền bằng thẻ trong năm 1998?
+  sql: |
+    select count(*) from core.fact_transactions
+    where operation = 'card_withdrawal' and transaction_date >= '1998-01-01' and transaction_date < '1999-01-01'
+- id: q22
+  question: Total amount of pension payments received in 1998
+  sql: |
+    select sum(amount) from core.fact_transactions
+    where purpose = 'pension' and transaction_date >= '1998-01-01' and transaction_date < '1999-01-01'
+- id: q23
+  question: Tổng phí sao kê ngân hàng thu được theo năm
+  sql: select extract(year from transaction_date), sum(amount) from core.fact_transactions where purpose = 'statement_fee' group by 1
+- id: q24
+  question: Có bao nhiêu lần khách bị tính lãi phạt?
+  sql: select count(*) from core.fact_transactions where purpose = 'penalty_interest'
+- id: q25
+  question: 10 tài khoản có tổng tiền vào năm 1998 lớn nhất
+  sql: |
+    select account_id, sum(amount) from core.fact_transactions
+    where direction = 'credit' and transaction_date >= '1998-01-01' and transaction_date < '1999-01-01'
+    group by 1 order by 2 desc limit 10
+- id: q26
+  question: Tuổi trung bình của khách hàng nữ và nam
+  sql: select gender, avg(age_at_as_of) from core.dim_customer group by 1
+- id: q27
+  question: Số tài khoản theo tần suất sao kê
+  sql: select statement_frequency, count(*) from core.dim_account group by 1
+- id: q28
+  question: Số lệnh chuyển tiền định kỳ theo mục đích
+  sql: select purpose, count(*) from core.fact_standing_orders group by 1
+- id: q29
+  question: Tăng trưởng tiền gửi tháng 12/1998 so với tháng 12/1997 là bao nhiêu phần trăm?
+  sql: |
+    select (select total_deposits from marts.mart_monthly_kpi where year_month = '1998-12')
+         / (select total_deposits from marts.mart_monthly_kpi where year_month = '1997-12') - 1
+- id: q30
+  question: Khách nhóm tuổi nào có tỷ lệ vỡ nợ cao nhất?
+  sql: select age_band from marts.mart_loan_performance group by 1 order by avg(is_default::int) desc limit 1

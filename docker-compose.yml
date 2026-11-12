@@ -52,5 +52,32 @@ services:
       --lastname User --role Admin --email admin@example.com || true) &&
       (airflow scheduler &) && exec airflow webserver"
 
+  dq-api:
+    build: {context: ., dockerfile: docker/app.Dockerfile}
+    environment:
+      RO_DSN: postgresql://analyst_ro:${ANALYST_RO_PASSWORD:-analyst_ro}@postgres:5432/bank
+    command: uvicorn dq.api:app --host 0.0.0.0 --port 8002
+    ports: ["8002:8002"]
+    depends_on: [postgres]
+
+  assistant-api:
+    build: {context: ., dockerfile: docker/app.Dockerfile}
+    environment:
+      RO_DSN: postgresql://analyst_ro:${ANALYST_RO_PASSWORD:-analyst_ro}@postgres:5432/bank
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
+      GOOGLE_API_KEY_2: ${GOOGLE_API_KEY_2:-}
+      GOOGLE_API_KEY_3: ${GOOGLE_API_KEY_3:-}
+    command: uvicorn assistant.api:app --host 0.0.0.0 --port 8003
+    ports: ["8003:8003"]
+    depends_on: [postgres]
+
+  assistant-ui:
+    build: {context: ., dockerfile: docker/app.Dockerfile}
+    environment:
+      ASSISTANT_API: http://assistant-api:8003
+    command: streamlit run assistant/ui.py --server.port 8501 --server.address 0.0.0.0
+    ports: ["8501:8501"]
+    depends_on: [assistant-api]
+
 volumes:
   pgdata:
