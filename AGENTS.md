@@ -5,7 +5,7 @@
 ## Trạng thái (2026-11-12)
 - Portfolio cho JD "AI Engineer – định hướng BA Data/DA/DE" (Banking, 70 % Data / 30 % AI). Một repo, 4 module: pipeline (Airflow + dbt + Postgres), analytics/DWH (mart, KPI, Power BI spec, SQL phỏng vấn), DQ & reconciliation (GX + SQL), AI assistant (Text-to-SQL có guard).
 - Dữ liệu Berka thật (gitignored, `scripts/download_data.py`). Phần giả lập: tách 3 nguồn, lỗi API, file switch có lỗi cấy (`dq/inject.py`, nhãn ở `landing/switch/_labels.csv`).
-- Git local, **chưa có remote**; user tự tạo repo GitHub public.
+- Đã push public: `github.com/luongducthangDS/banking-data-platform` (nhánh `main`); `.env`, `data/`, `landing/` và logs không lên remote.
 - Số liệu và việc còn lại: `docs/PROGRESS.md`.
 
 ## Gotchas
